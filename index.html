@@ -1,1 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="theme-color" content="#0b0f18" />
+  <title>El Secreto de Papá Noel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./style.css?v=1" />
+</head>
+<body>
+
+  <!-- PRELOADER -->
+  <div class="preloader" id="preloader" aria-live="polite">
+    <div class="preCard">
+      <img class="preLogo" src="./assets/logo.png" alt="Logo" onerror="this.style.display='none'">
+      <div class="preTitle">El Secreto de Papá Noel</div>
+      <div class="preSub">Preparando el cofre mágico…</div>
+
+      <div class="barBg">
+        <div class="barFill" id="barFill"></div>
+      </div>
+      <div class="barText" id="barText">0%</div>
+
+      <div class="preHint">Tip: tocá el cofre para abrirlo ✨</div>
+    </div>
+  </div>
+
+  <!-- TOP HUD -->
+  <div class="hud">
+    <div class="brand">
+      <span class="dot"></span>
+      <span class="brandTxt">Navidad • Cofre Mágico</span>
+    </div>
+    <button class="soundBtn" id="soundBtn" aria-label="Sonido">🔊</button>
+  </div>
+
+  <!-- AMBIENCE LAYERS -->
+  <div class="bg">
+    <div class="stars"></div>
+    <div class="glow"></div>
+    <div class="mist"></div>
+    <div class="hills"></div>
+    <div class="snow" id="snow"></div>
+  </div>
+
+  <!-- MAIN -->
+  <main class="wrap" id="wrap">
+    <header class="title">
+      <h1>El Secreto de Papá Noel</h1>
+      <p>Un cofre mágico guarda un regalo. Abrilo y descubrí tu premio 🎁</p>
+    </header>
+
+    <section class="stage">
+      <!-- LIGHT AURA -->
+      <div class="aura" id="aura"></div>
+      <div class="beam" id="beam"></div>
+
+      <!-- CHEST -->
+      <div class="chestWrap" id="chestWrap" role="button" aria-label="Abrir cofre" tabindex="0">
+        <div class="chest3d" id="chest3d">
+          <div class="lid">
+            <div class="lidFace lidTop"></div>
+            <div class="lidFace lidFront"></div>
+            <div class="lidFace lidBack"></div>
+            <div class="lidFace lidLeft"></div>
+            <div class="lidFace lidRight"></div>
+            <div class="lidBand"></div>
+          </div>
+
+          <div class="base">
+            <div class="baseFace baseTop"></div>
+            <div class="baseFace baseFront"></div>
+            <div class="baseFace baseBack"></div>
+            <div class="baseFace baseLeft"></div>
+            <div class="baseFace baseRight"></div>
+            <div class="lock"></div>
+          </div>
+        </div>
+
+        <div class="tapHint" id="tapHint">✨ TOCÁ EL COFRE PARA REVELAR TU REGALO ✨</div>
+      </div>
+
+      <!-- GIFT POP -->
+      <div class="gift" id="gift" aria-hidden="true">
+        <div class="giftBox">
+          <div class="giftFace gfFront"></div>
+          <div class="giftFace gfBack"></div>
+          <div class="giftFace gfLeft"></div>
+          <div class="giftFace gfRight"></div>
+          <div class="giftFace gfTop"></div>
+          <div class="giftFace gfBottom"></div>
+          <div class="ribbonV"></div>
+          <div class="ribbonH"></div>
+          <div class="bow">
+            <span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <div class="mini">
+        🎄 Premio final se muestra en pantalla. Si recargás, queda guardado.
+      </div>
+    </footer>
+  </main>
+
+  <!-- RESULT MODAL -->
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="card">
+      <div class="cardGlow"></div>
+      <div class="tag" id="tag">🎁 Resultado</div>
+      <h2 id="prizeTitle">¡Premio desbloqueado!</h2>
+      <p class="desc" id="prizeDesc">Bono del 150%</p>
+
+      <div class="pillRow">
+        <div class="pill"><span>Rareza</span><b id="rarity">Rara</b></div>
+        <div class="pill"><span>Código</span><b id="code">NOEL-2025</b></div>
+      </div>
+
+      <div class="btnRow">
+        <button class="btn primary" id="claimBtn">Reclamar</button>
+        <button class="btn ghost" id="closeBtn">Cerrar</button>
+      </div>
+
+      <div class="note">Mostrale este resultado a tu asesor para acreditarlo.</div>
+    </div>
+  </div>
+
+  <script src="./main.js?v=1"></script>
+</body>
+</html>
 
