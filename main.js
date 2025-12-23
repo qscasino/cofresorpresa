@@ -1,277 +1,324 @@
-(() => {
-  const STORAGE_KEY = "secreto_papanoel_v1";
+// =====================
+// El Secreto de Papá Noel — Chest + Card
+// Listo para GitHub Pages (rutas relativas)
+// =====================
 
-  const preloader = document.getElementById("preloader");
-  const barFill = document.getElementById("barFill");
-  const barText = document.getElementById("barText");
+const $ = (q) => document.querySelector(q);
 
-  const snow = document.getElementById("snow");
-  const chestWrap = document.getElementById("chestWrap");
-  const tapHint = document.getElementById("tapHint");
-  const aura = document.getElementById("aura");
-  const beam = document.getElementById("beam");
-  const gift = document.getElementById("gift");
+const preloader = $("#preloader");
+const progressFill = $("#progressFill");
+const progressText = $("#progressText");
+const progressSub = $("#progressSub");
 
-  const modal = document.getElementById("modal");
-  const prizeTitle = document.getElementById("prizeTitle");
-  const prizeDesc = document.getElementById("prizeDesc");
-  const rarityEl = document.getElementById("rarity");
-  const codeEl = document.getElementById("code");
-  const tagEl = document.getElementById("tag");
+const soundBtn = $("#soundBtn");
+const screen = $("#screen");
 
-  const claimBtn = document.getElementById("claimBtn");
-  const closeBtn = document.getElementById("closeBtn");
+const chestBtn = $("#chestBtn");
+const chestWrap = $("#chestWrap");
+const instruction = $("#instruction");
 
-  const soundBtn = document.getElementById("soundBtn");
+const cardPop = $("#cardPop");
+const prizeCard = $("#prizeCard");
+const rarityChip = $("#rarityChip");
+const prizeIcon = $("#prizeIcon");
+const prizeTitle = $("#prizeTitle");
+const prizeSub = $("#prizeSub");
 
-  // ---------- Simple audio (beep) + optional bg music ----------
-  let soundEnabled = true;
+const modal = $("#modal");
+const modalClose = $("#modalClose");
+const claimBtn = $("#claimBtn");
+const copyBtn = $("#copyBtn");
+const tinyMsg = $("#tinyMsg");
 
-  const beep = (freq = 520, dur = 0.07, type = "triangle", vol = 0.03) => {
-    if (!soundEnabled) return;
-    try {
-      const ctx = beep.ctx || (beep.ctx = new (window.AudioContext || window.webkitAudioContext)());
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = type;
-      o.frequency.value = freq;
-      g.gain.value = vol;
-      o.connect(g); g.connect(ctx.destination);
-      o.start();
-      o.stop(ctx.currentTime + dur);
-    } catch {}
-  };
+const bigCard = $("#bigCard");
+const bigRarity = $("#bigRarity");
+const bigIcon = $("#bigIcon");
+const bigTitle = $("#bigTitle");
+const bigDesc = $("#bigDesc");
 
-  // Optional: si agregás ./assets/bg-music.mp3
-  const bgMusic = new Audio("./assets/bg-music.mp3");
-  bgMusic.loop = true;
-  bgMusic.volume = 0.25;
-  bgMusic.onerror = () => {}; // si no existe, no rompe
+const snow = $("#snow");
 
-  const tryStartMusic = () => {
-    if (!soundEnabled) return;
-    bgMusic.play().catch(() => {});
-  };
+// ===== LocalStorage =====
+const STORAGE_KEY = "santa_noel_prize_v1";
 
-  soundBtn.addEventListener("click", () => {
-    soundEnabled = !soundEnabled;
-    soundBtn.textContent = soundEnabled ? "🔊" : "🔇";
-    if (soundEnabled) tryStartMusic();
-    else bgMusic.pause();
-    beep(soundEnabled ? 880 : 220, 0.06, "square", 0.02);
-  });
+// ===== Prizes =====
+const PRIZES = [
+  { id:"100", label:"BONO 100%", rarity:"COMÚN", icon:"🎁", desc:"Mostrale este resultado a tu asesor para acreditarlo.", css:"common", weight: 52 },
+  { id:"150", label:"BONO 150%", rarity:"RARA", icon:"💎", desc:"Mostrale este resultado a tu asesor para acreditarlo.", css:"rare", weight: 26 },
+  { id:"200", label:"BONO 200%", rarity:"LEGENDARIA", icon:"🏆", desc:"¡Premio máximo! Mostralo a tu asesor para acreditarlo.", css:"legendary", weight: 12 },
+  { id:"choice", label:"BONO A ELECCIÓN", rarity:"ÉPICA", icon:"🎯", desc:"Elegí tu bono con tu asesor. Mostrale este resultado.", css:"epic", weight: 7 },
+  { id:"mystery", label:"BONO SORPRESA", rarity:"MISTERIOSA", icon:"❓", desc:"Tu asesor te dirá qué sorpresa te tocó. Mostrale este resultado.", css:"mystery", weight: 3 },
+];
 
-  // ---------- Snow particles ----------
-  function spawnSnowflake() {
-    const s = document.createElement("div");
-    s.className = "snowflake";
-    s.textContent = Math.random() > 0.15 ? "❄" : "✦";
-    s.style.left = (Math.random() * 100) + "vw";
-    s.style.fontSize = (Math.random() * 10 + 10) + "px";
-    s.style.opacity = (Math.random() * 0.55 + 0.25).toFixed(2);
-    s.style.setProperty("--drift", `${(Math.random() * 80 - 40).toFixed(0)}px`);
-    s.style.animationDuration = (Math.random() * 4 + 6).toFixed(2) + "s";
-
-    snow.appendChild(s);
-    s.addEventListener("animationend", () => s.remove());
+function weightedPick(items){
+  const total = items.reduce((s, it) => s + it.weight, 0);
+  let r = Math.random() * total;
+  for(const it of items){
+    r -= it.weight;
+    if(r <= 0) return it;
   }
+  return items[0];
+}
 
-  function snowLoop() {
-    const isMobile = window.innerWidth < 768;
-    const max = isMobile ? 10 : 16;
-    let active = 0;
+// ===== Audio (opcional) =====
+let soundEnabled = true;
+let audioUnlocked = false;
 
-    const tick = () => {
-      if (active < max) {
-        spawnSnowflake();
-        active++;
-      }
-      // release count gradually
-      setTimeout(() => { active = Math.max(0, active - 1); }, 900);
-      setTimeout(tick, 220);
-    };
-    tick();
+const sounds = {
+  ambient: new Audio("assets/ambient.mp3"),
+  open: new Audio("assets/sfx_open.mp3"),
+  reveal: new Audio("assets/sfx_reveal.mp3"),
+};
+
+Object.values(sounds).forEach(a => {
+  a.volume = 0.55;
+  a.onerror = () => {}; // si no existe el archivo, no rompe
+});
+sounds.ambient.loop = true;
+sounds.ambient.volume = 0.28;
+
+function tryPlay(audio){
+  if(!soundEnabled || !audio) return;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+}
+
+function unlockAudio(){
+  if(audioUnlocked) return;
+  audioUnlocked = true;
+  if(soundEnabled) sounds.ambient.play().catch(()=>{});
+}
+
+// Toggle sound
+soundBtn.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  soundBtn.textContent = soundEnabled ? "🔊" : "🔇";
+  soundBtn.classList.toggle("muted", !soundEnabled);
+
+  if(soundEnabled){
+    unlockAudio();
+    sounds.ambient.play().catch(()=>{});
+  } else {
+    sounds.ambient.pause();
   }
+});
 
-  // ---------- Prize logic ----------
-  const PRIZES = [
-    { key: "BONO_100", label: "Bono del 100%", rarity: "Común", weight: 40, code: "NOEL-100" },
-    { key: "BONO_150", label: "Bono del 150%", rarity: "Rara", weight: 28, code: "NOEL-150" },
-    { key: "BONO_200", label: "Bono del 200%", rarity: "Legendaria", weight: 14, code: "NOEL-200" },
-    { key: "BONO_ELECCION", label: "Bono a elección", rarity: "Épica", weight: 10, code: "NOEL-ELEG" },
-    { key: "BONO_SORPRESA", label: "Bono sorpresa", rarity: "Misteriosa", weight: 8, code: "NOEL-SORP" },
+// Primer interacción desbloquea audio en móviles
+window.addEventListener("pointerdown", unlockAudio, { once:true });
+
+// ===== Preloader =====
+async function runPreloader(){
+  const minTime = 900; // para que se sienta pro
+  const start = performance.now();
+
+  const steps = [
+    "Encendiendo la magia…",
+    "Cargando brillo dorado…",
+    "Preparando el regalo…",
+    "Listo 🎄"
   ];
 
-  function pickPrize() {
-    const total = PRIZES.reduce((a, p) => a + p.weight, 0);
-    let r = Math.random() * total;
-    for (const p of PRIZES) {
-      r -= p.weight;
-      if (r <= 0) return p;
+  let p = 0;
+  const timer = setInterval(() => {
+    p = Math.min(100, p + (Math.random() * 14 + 7));
+    progressFill.style.width = `${p}%`;
+    progressText.textContent = `${Math.floor(p)}%`;
+    progressFill.parentElement?.parentElement?.setAttribute("aria-valuenow", String(Math.floor(p)));
+
+    if(p < 35) progressSub.textContent = steps[0];
+    else if(p < 65) progressSub.textContent = steps[1];
+    else if(p < 92) progressSub.textContent = steps[2];
+    else progressSub.textContent = steps[3];
+
+    if(p >= 100){
+      clearInterval(timer);
     }
-    return PRIZES[0];
+  }, 120);
+
+  // esperar mínimo
+  while(performance.now() - start < minTime){
+    await new Promise(r => setTimeout(r, 60));
   }
 
-  function saveResult(result) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      played: true,
-      result,
-      ts: Date.now()
-    }));
+  // asegurar 100
+  progressFill.style.width = "100%";
+  progressText.textContent = "100%";
+  progressSub.textContent = "Listo 🎄";
+
+  await new Promise(r => setTimeout(r, 260));
+  preloader.classList.add("hidden");
+  startSnow();
+  restoreIfPlayed();
+}
+runPreloader();
+
+// ===== Snow =====
+function startSnow(){
+  const max = window.innerWidth < 700 ? 10 : 16;
+  function spawn(){
+    const f = document.createElement("div");
+    f.className = "flake";
+    f.textContent = Math.random() > 0.65 ? "❄" : "✦";
+    f.style.left = `${Math.random() * 100}vw`;
+    f.style.fontSize = `${Math.random() * 10 + 10}px`;
+    f.style.opacity = String(Math.random() * 0.45 + 0.25);
+    f.style.animationDuration = `${Math.random() * 5 + 7}s`;
+    f.style.transform = `translateY(-12px) rotate(${Math.random()*180}deg)`;
+    snow.appendChild(f);
+
+    f.addEventListener("animationend", () => f.remove());
   }
 
-  function loadResult() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); }
-    catch { return null; }
-  }
-
-  // ---------- Effects ----------
-  function enableMagicLight() {
-    aura.style.opacity = "1";
-    aura.style.transform = "scale(1)";
-    beam.style.opacity = "1";
-    beam.style.transform = "translateY(0) scale(1)";
-  }
-
-  function disableMagicLight() {
-    aura.style.opacity = "0";
-    aura.style.transform = "scale(.92)";
-    beam.style.opacity = "0";
-    beam.style.transform = "translateY(14px) scale(.96)";
-  }
-
-  function showGift() {
-    gift.classList.add("show");
-  }
-
-  function hideGift() {
-    gift.classList.remove("show");
-  }
-
-  function openModal(prize) {
-    modal.classList.add("show");
-    modal.setAttribute("aria-hidden", "false");
-
-    const isLegend = prize.key === "BONO_200";
-    tagEl.textContent = isLegend ? "👑 Legendaria" : "🎁 Resultado";
-    prizeTitle.textContent = isLegend ? "¡Premio Máximo!" : "¡Premio desbloqueado!";
-    prizeDesc.textContent = prize.label;
-
-    rarityEl.textContent = prize.rarity;
-    codeEl.textContent = prize.code;
-
-    // mini sparkle audio
-    beep(isLegend ? 880 : 640, 0.09, "square", 0.03);
-    setTimeout(() => beep(isLegend ? 740 : 520, 0.08, "triangle", 0.02), 90);
-  }
-
-  function closeModal() {
-    modal.classList.remove("show");
-    modal.setAttribute("aria-hidden", "true");
-  }
-
-  // ---------- Gameplay ----------
-  let busy = false;
-  let opened = false;
-
-  function playSequence(prize) {
-    busy = true;
-
-    // opening
-    chestWrap.classList.add("opening");
-    tapHint.style.opacity = "0";
-    beep(420, 0.08, "sawtooth", 0.02);
-
-    setTimeout(() => {
-      chestWrap.classList.remove("opening");
-      chestWrap.classList.add("opened");
-      enableMagicLight();
-      beep(520, 0.07, "triangle", 0.02);
-    }, 520);
-
-    // show gift
-    setTimeout(() => {
-      showGift();
-      beep(660, 0.07, "triangle", 0.02);
-    }, 980);
-
-    // modal
-    setTimeout(() => {
-      openModal(prize);
-      busy = false;
-      opened = true;
-    }, 1500);
-  }
-
-  function startGame() {
-    const saved = loadResult();
-    if (saved?.played && saved?.result) {
-      // ya jugó: mostrar resultado directo
-      chestWrap.classList.add("opened");
-      enableMagicLight();
-      showGift();
-      opened = true;
-      setTimeout(() => openModal(saved.result), 450);
-      return;
+  let alive = 0;
+  setInterval(() => {
+    if(alive < max){
+      spawn();
+      alive++;
+      setTimeout(() => alive--, 400); // control suave
     }
+  }, 260);
+}
 
-    // new run
-    chestWrap.addEventListener("click", onOpen);
-    chestWrap.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") onOpen();
-    });
+// ===== Prize render =====
+function applyPrizeToCard(prize){
+  // reset clases
+  chestWrap.classList.remove("prize-common","prize-rare","prize-epic","prize-legendary","prize-mystery");
+  chestWrap.classList.add(`prize-${prize.css}`);
+
+  rarityChip.textContent = prize.rarity;
+  prizeIcon.textContent = prize.icon;
+  prizeTitle.textContent = prize.label;
+  prizeSub.textContent = "Tocá la carta para ver el detalle";
+
+  // Big modal
+  bigCard.classList.remove("big-common","big-rare","big-epic","big-legendary","big-mystery");
+  bigCard.classList.add(`big-${prize.css}`);
+
+  bigRarity.textContent = prize.rarity;
+  bigIcon.textContent = prize.icon;
+  bigTitle.textContent = prize.label;
+  bigDesc.textContent = prize.desc;
+}
+
+function openModal(){
+  modal.classList.add("active");
+  modal.setAttribute("aria-hidden","false");
+}
+function closeModal(){
+  modal.classList.remove("active");
+  modal.setAttribute("aria-hidden","true");
+  tinyMsg.textContent = "";
+}
+
+modalClose.addEventListener("click", closeModal);
+modal.addEventListener("click", (e) => {
+  if(e.target === modal) closeModal();
+});
+
+// ===== Chest logic =====
+let busy = false;
+
+function setOpenedVisual(){
+  chestWrap.classList.add("opened");
+  chestWrap.classList.add("show-card");
+  instruction.classList.add("hidden");
+  cardPop.setAttribute("aria-hidden", "false");
+}
+
+function setOpeningVisual(){
+  chestWrap.classList.add("opening");
+  setTimeout(() => chestWrap.classList.remove("opening"), 650);
+}
+
+function savePrize(prize){
+  const payload = { id: prize.id, ts: Date.now() };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+function loadPrize(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw) return null;
+  try{
+    const parsed = JSON.parse(raw);
+    const prize = PRIZES.find(p => p.id === parsed.id);
+    return prize ? { prize, meta: parsed } : null;
+  }catch{
+    return null;
+  }
+}
+
+function restoreIfPlayed(){
+  // Reset rápido para test: ?reset=1
+  const params = new URLSearchParams(location.search);
+  if(params.get("reset") === "1"){
+    localStorage.removeItem(STORAGE_KEY);
   }
 
-  function onOpen() {
-    if (busy || opened) return;
+  const stored = loadPrize();
+  if(!stored) return;
 
-    // iniciar música al primer gesto (mobile policy)
-    tryStartMusic();
+  applyPrizeToCard(stored.prize);
+  setOpenedVisual();
+  // deja el cofre ya abierto sin animación molesta
+}
 
-    const prize = pickPrize();
-    saveResult(prize);
-    playSequence(prize);
+// Click cofre
+chestBtn.addEventListener("click", () => {
+  if(busy) return;
+
+  // Si ya hay premio guardado, solo mostrar modal
+  const stored = loadPrize();
+  if(stored){
+    applyPrizeToCard(stored.prize);
+    setOpenedVisual();
+    openModal();
+    return;
   }
 
-  // Claim
-  claimBtn.addEventListener("click", () => {
-    // acá podés poner tu integración real (WhatsApp / link / etc.)
-    // ejemplo: window.location.href = "https://wa.me/...";
-    beep(880, 0.09, "square", 0.03);
-    closeModal();
-  });
+  busy = true;
 
-  closeBtn.addEventListener("click", () => {
-    beep(360, 0.06, "triangle", 0.02);
-    closeModal();
-  });
+  // Elegir premio y guardar
+  const prize = weightedPick(PRIZES);
+  savePrize(prize);
+  applyPrizeToCard(prize);
 
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal();
-  });
+  // Animación: shake + abrir + luz + carta
+  setOpeningVisual();
+  tryPlay(sounds.open);
 
-  // ---------- Preloader ----------
-  function runPreloader() {
-    let p = 0;
-    const i = setInterval(() => {
-      p += Math.random() * 12 + 6;
-      if (p >= 100) {
-        p = 100;
-        clearInterval(i);
-        setTimeout(() => {
-          preloader.classList.add("hidden");
-          snowLoop();
-          startGame();
-        }, 400);
-      }
-      barFill.style.width = p + "%";
-      barText.textContent = Math.floor(p) + "%";
-    }, 120);
+  setTimeout(() => {
+    chestWrap.classList.add("opened");
+  }, 620);
+
+  setTimeout(() => {
+    chestWrap.classList.add("show-card");
+    instruction.classList.add("hidden");
+    cardPop.setAttribute("aria-hidden", "false");
+    tryPlay(sounds.reveal);
+    busy = false;
+  }, 980);
+});
+
+// Tap en carta abre modal
+prizeCard.addEventListener("click", (e) => {
+  e.stopPropagation();
+  openModal();
+});
+
+// Botones modal
+claimBtn.addEventListener("click", () => {
+  tinyMsg.textContent = "✅ Listo. Mostrale esta pantalla a tu asesor para acreditarlo.";
+});
+
+copyBtn.addEventListener("click", async () => {
+  const stored = loadPrize();
+  if(!stored) return;
+
+  const text = `🎁 El Secreto de Papá Noel — Premio: ${stored.prize.label} (${stored.prize.rarity})`;
+  try{
+    await navigator.clipboard.writeText(text);
+    tinyMsg.textContent = "📋 Copiado. Pegalo en WhatsApp.";
+  }catch{
+    tinyMsg.textContent = "No se pudo copiar (tu navegador lo bloqueó).";
   }
-
-  // Start
-  disableMagicLight();
-  hideGift();
-  runPreloader();
-})();
-
+});
