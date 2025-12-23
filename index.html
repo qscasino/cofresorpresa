@@ -2,137 +2,146 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <meta name="theme-color" content="#0b0f18" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b0b10" />
   <title>El Secreto de Papá Noel</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="./style.css?v=1" />
+  <!-- IMPORTANTE: rutas relativas para GitHub Pages -->
+  <link rel="stylesheet" href="./style.css" />
 </head>
+
 <body>
-
   <!-- PRELOADER -->
-  <div class="preloader" id="preloader" aria-live="polite">
-    <div class="preCard">
-      <img class="preLogo" src="./assets/logo.png" alt="Logo" onerror="this.style.display='none'">
-      <div class="preTitle">El Secreto de Papá Noel</div>
-      <div class="preSub">Preparando el cofre mágico…</div>
+  <div class="preloader" id="preloader" aria-hidden="false">
+    <div class="pre-card">
+      <img class="pre-logo" src="assets/logo.png" alt="Logo" onerror="this.style.display='none'">
 
-      <div class="barBg">
-        <div class="barFill" id="barFill"></div>
+      <!-- Imagen opcional arriba de la barra -->
+      <img class="pre-ornament" src="assets/preload-top.png" alt="" onerror="this.style.display='none'">
+
+      <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+          <div class="progress-glow"></div>
+        </div>
+        <div class="progress-text">
+          <span id="progressText">0%</span>
+          <span class="progress-sub" id="progressSub">Preparando el cofre…</span>
+        </div>
       </div>
-      <div class="barText" id="barText">0%</div>
 
-      <div class="preHint">Tip: tocá el cofre para abrirlo ✨</div>
+      <div class="pre-hint">Si el audio está activado, se inicia al primer toque.</div>
     </div>
   </div>
 
-  <!-- TOP HUD -->
-  <div class="hud">
-    <div class="brand">
-      <span class="dot"></span>
-      <span class="brandTxt">Navidad • Cofre Mágico</span>
-    </div>
-    <button class="soundBtn" id="soundBtn" aria-label="Sonido">🔊</button>
-  </div>
-
-  <!-- AMBIENCE LAYERS -->
-  <div class="bg">
-    <div class="stars"></div>
-    <div class="glow"></div>
-    <div class="mist"></div>
-    <div class="hills"></div>
-    <div class="snow" id="snow"></div>
-  </div>
+  <!-- UI TOP -->
+  <header class="topbar">
+    <button class="sound-btn" id="soundBtn" aria-label="Sonido">🔊</button>
+  </header>
 
   <!-- MAIN -->
-  <main class="wrap" id="wrap">
-    <header class="title">
-      <h1>El Secreto de Papá Noel</h1>
-      <p>Un cofre mágico guarda un regalo. Abrilo y descubrí tu premio 🎁</p>
-    </header>
+  <main class="screen" id="screen">
+    <div class="hero">
+      <h1 class="title">EL SECRETO DE PAPÁ NOEL</h1>
+      <p class="subtitle">Un cofre mágico guarda un regalo. Abrilo y descubrí tu premio 🎁</p>
+
+      <!-- Imagen opcional en fase de juego -->
+      <img class="game-ornament" src="assets/game-top.png" alt="" onerror="this.style.display='none'">
+    </div>
 
     <section class="stage">
-      <!-- LIGHT AURA -->
-      <div class="aura" id="aura"></div>
-      <div class="beam" id="beam"></div>
-
-      <!-- CHEST -->
-      <div class="chestWrap" id="chestWrap" role="button" aria-label="Abrir cofre" tabindex="0">
-        <div class="chest3d" id="chest3d">
-          <div class="lid">
-            <div class="lidFace lidTop"></div>
-            <div class="lidFace lidFront"></div>
-            <div class="lidFace lidBack"></div>
-            <div class="lidFace lidLeft"></div>
-            <div class="lidFace lidRight"></div>
-            <div class="lidBand"></div>
-          </div>
-
-          <div class="base">
-            <div class="baseFace baseTop"></div>
-            <div class="baseFace baseFront"></div>
-            <div class="baseFace baseBack"></div>
-            <div class="baseFace baseLeft"></div>
-            <div class="baseFace baseRight"></div>
-            <div class="lock"></div>
-          </div>
-        </div>
-
-        <div class="tapHint" id="tapHint">✨ TOCÁ EL COFRE PARA REVELAR TU REGALO ✨</div>
+      <div class="ambient-layers" aria-hidden="true">
+        <div class="aurora"></div>
+        <div class="vignette"></div>
       </div>
 
-      <!-- GIFT POP -->
-      <div class="gift" id="gift" aria-hidden="true">
-        <div class="giftBox">
-          <div class="giftFace gfFront"></div>
-          <div class="giftFace gfBack"></div>
-          <div class="giftFace gfLeft"></div>
-          <div class="giftFace gfRight"></div>
-          <div class="giftFace gfTop"></div>
-          <div class="giftFace gfBottom"></div>
-          <div class="ribbonV"></div>
-          <div class="ribbonH"></div>
-          <div class="bow">
-            <span></span><span></span>
+      <!-- COFRE 3D -->
+      <button class="chest-btn" id="chestBtn" aria-label="Abrir cofre">
+        <div class="chest-wrap" id="chestWrap">
+          <div class="lightcone" id="lightCone"></div>
+          <div class="bloom" id="bloom"></div>
+
+          <div class="chest3d" id="chest3d">
+            <!-- BASE -->
+            <div class="base">
+              <div class="face front"></div>
+              <div class="face back"></div>
+              <div class="face left"></div>
+              <div class="face right"></div>
+              <div class="face top"></div>
+              <div class="face bottom"></div>
+
+              <div class="metal-band band-1"></div>
+              <div class="metal-band band-2"></div>
+              <div class="lock-plate"></div>
+              <div class="lock"></div>
+            </div>
+
+            <!-- LID -->
+            <div class="lid" id="lid">
+              <div class="face lid-top"></div>
+              <div class="face lid-front"></div>
+              <div class="face lid-back"></div>
+              <div class="face lid-left"></div>
+              <div class="face lid-right"></div>
+
+              <div class="lid-band"></div>
+            </div>
+          </div>
+
+          <!-- CARTA que sale del cofre -->
+          <div class="card-pop" id="cardPop" aria-hidden="true">
+            <div class="prize-card" id="prizeCard">
+              <div class="rarity-chip" id="rarityChip">COMÚN</div>
+              <div class="prize-icon" id="prizeIcon">🎁</div>
+              <div class="prize-title" id="prizeTitle">BONO 100%</div>
+              <div class="prize-sub" id="prizeSub">Tu regalo de Navidad</div>
+              <div class="shine" aria-hidden="true"></div>
+              <div class="aura" aria-hidden="true"></div>
+            </div>
           </div>
         </div>
-      </div>
+      </button>
+
+      <p class="instruction" id="instruction">✨ Tocá el cofre para revelar tu regalo ✨</p>
+      <p class="note" id="note">🎄 El premio final se muestra en pantalla. Si recargás, queda guardado.</p>
     </section>
-
-    <footer class="foot">
-      <div class="mini">
-        🎄 Premio final se muestra en pantalla. Si recargás, queda guardado.
-      </div>
-    </footer>
   </main>
 
-  <!-- RESULT MODAL -->
+  <!-- MODAL RESULTADO -->
   <div class="modal" id="modal" aria-hidden="true">
-    <div class="card">
-      <div class="cardGlow"></div>
-      <div class="tag" id="tag">🎁 Resultado</div>
-      <h2 id="prizeTitle">¡Premio desbloqueado!</h2>
-      <p class="desc" id="prizeDesc">Bono del 150%</p>
-
-      <div class="pillRow">
-        <div class="pill"><span>Rareza</span><b id="rarity">Rara</b></div>
-        <div class="pill"><span>Código</span><b id="code">NOEL-2025</b></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Resultado">
+      <div class="modal-head">
+        <div class="modal-title">🎁 Tu premio</div>
+        <button class="modal-x" id="modalClose" aria-label="Cerrar">✕</button>
       </div>
 
-      <div class="btnRow">
-        <button class="btn primary" id="claimBtn">Reclamar</button>
-        <button class="btn ghost" id="closeBtn">Cerrar</button>
-      </div>
+      <div class="modal-body">
+        <div class="big-card" id="bigCard">
+          <div class="big-rarity" id="bigRarity">LEGENDARIA</div>
+          <div class="big-icon" id="bigIcon">🏆</div>
+          <div class="big-title" id="bigTitle">BONO 200%</div>
+          <div class="big-desc" id="bigDesc">Mostrale este resultado a tu asesor para acreditarlo.</div>
+          <div class="big-aura" aria-hidden="true"></div>
+        </div>
 
-      <div class="note">Mostrale este resultado a tu asesor para acreditarlo.</div>
+        <div class="modal-actions">
+          <button class="btn gold" id="claimBtn">¡Reclamar premio!</button>
+          <button class="btn ghost" id="copyBtn">Copiar resultado</button>
+        </div>
+
+        <div class="tiny" id="tinyMsg"></div>
+      </div>
     </div>
   </div>
 
-  <script src="./main.js?v=1"></script>
+  <div class="snow" id="snow" aria-hidden="true"></div>
+
+  <!-- IMPORTANTE: rutas relativas -->
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
-
