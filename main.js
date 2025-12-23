@@ -75,7 +75,7 @@ const sounds = {
 
 Object.values(sounds).forEach(a => {
   a.volume = 0.55;
-  a.onerror = () => {}; // si no existe, no rompe
+  a.onerror = () => {};
 });
 sounds.ambient.loop = true;
 sounds.ambient.volume = 0.28;
@@ -146,7 +146,7 @@ async function runPreloader(){
   const start = performance.now();
   let p = 0;
 
-  const steps = ["Preparando la magia…", "Cargando el cofre 3D…", "Creando tu carta…", "Listo 🎄"];
+  const steps = ["Preparando la magia…", "Cargando el cofre 3D…", "Armando el escenario…", "Listo 🎄"];
   const timer = setInterval(() => {
     p = Math.min(100, p + (Math.random() * 14 + 7));
     progressFill.style.width = `${p}%`;
@@ -209,21 +209,204 @@ ground.rotation.x = -Math.PI / 2;
 ground.position.y = 0;
 scene.add(ground);
 
-// Simple mountains (low poly)
-function addRock(x,z,s){
-  const geo = new THREE.IcosahedronGeometry(s, 0);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x2b2f3a, roughness: 0.95 });
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set(x, s*0.6, z);
-  m.rotation.y = Math.random()*Math.PI;
-  scene.add(m);
-}
-addRock(-7, -6, 3.0);
-addRock(8, -8, 3.6);
-addRock(-10, -12, 4.2);
-addRock(11, -14, 4.8);
+// ===== AMBIENCE: TREES + SANTA (REEMPLAZA ROCAS) =====
+const ambience = new THREE.Group();
+scene.add(ambience);
 
-// Snow particles
+const treeGreen = new THREE.MeshStandardMaterial({ color: 0x145a34, roughness: 0.92, metalness: 0.02 });
+const treeGreen2 = new THREE.MeshStandardMaterial({ color: 0x0e4a2a, roughness: 0.92, metalness: 0.02 });
+const bark = new THREE.MeshStandardMaterial({ color: 0x5b3a1e, roughness: 0.95, metalness: 0.01 });
+
+// Emissive bulbs materials (luces)
+const bulbMats = [
+  new THREE.MeshStandardMaterial({ color: 0xffe28a, emissive: 0xffd36a, emissiveIntensity: 1.2, roughness: 0.25, metalness: 0.2 }),
+  new THREE.MeshStandardMaterial({ color: 0xff6b6b, emissive: 0xff3b3b, emissiveIntensity: 1.2, roughness: 0.25, metalness: 0.2 }),
+  new THREE.MeshStandardMaterial({ color: 0x7bd3ff, emissive: 0x3aa8ff, emissiveIntensity: 1.2, roughness: 0.25, metalness: 0.2 }),
+  new THREE.MeshStandardMaterial({ color: 0xb6ff9b, emissive: 0x42ff7a, emissiveIntensity: 1.2, roughness: 0.25, metalness: 0.2 }),
+];
+
+function makeTree({ x, z, s=1.0, lights=true }){
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+
+  // trunk
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16*s, 0.22*s, 1.0*s, 8), bark);
+  trunk.position.y = 0.5*s;
+  g.add(trunk);
+
+  // layers (low poly cones)
+  const c1 = new THREE.Mesh(new THREE.ConeGeometry(0.95*s, 1.5*s, 7), treeGreen);
+  c1.position.y = 1.4*s;
+  g.add(c1);
+
+  const c2 = new THREE.Mesh(new THREE.ConeGeometry(0.75*s, 1.3*s, 7), treeGreen2);
+  c2.position.y = 2.1*s;
+  g.add(c2);
+
+  const c3 = new THREE.Mesh(new THREE.ConeGeometry(0.55*s, 1.1*s, 7), treeGreen);
+  c3.position.y = 2.75*s;
+  g.add(c3);
+
+  // star top
+  const starMat = new THREE.MeshStandardMaterial({
+    color: 0xffe39a,
+    emissive: 0xffd36a,
+    emissiveIntensity: 0.9,
+    roughness: 0.35,
+    metalness: 0.8
+  });
+  const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.16*s, 0), starMat);
+  star.position.y = 3.35*s;
+  star.rotation.y = Math.random()*Math.PI;
+  g.add(star);
+
+  // garlands + bulbs
+  if(lights){
+    const bulbs = new THREE.Group();
+    const bulbGeo = new THREE.SphereGeometry(0.06*s, 12, 12);
+
+    // 3 "vueltas" en alturas distintas
+    const loops = [
+      { y: 1.55*s, r: 0.78*s, n: 10 },
+      { y: 2.20*s, r: 0.60*s, n: 8 },
+      { y: 2.80*s, r: 0.42*s, n: 6 },
+    ];
+
+    for(const L of loops){
+      for(let i=0;i<L.n;i++){
+        const a = (i / L.n) * Math.PI * 2 + Math.random()*0.15;
+        const b = new THREE.Mesh(bulbGeo, bulbMats[(i + Math.floor(Math.random()*4)) % bulbMats.length]);
+        b.position.set(Math.cos(a)*L.r, L.y + Math.sin(a*2)*0.04*s, Math.sin(a)*L.r);
+        b.userData.tw = Math.random()*1.4 + 0.6;
+        b.userData.ph = Math.random()*Math.PI*2;
+        bulbs.add(b);
+      }
+    }
+    g.add(bulbs);
+    g.userData.bulbs = bulbs;
+    g.userData.star = star;
+  }
+
+  // slight random rotation
+  g.rotation.y = Math.random()*Math.PI*2;
+
+  ambience.add(g);
+  return g;
+}
+
+function makeSanta({ x, z, s=1.0 }){
+  const santa = new THREE.Group();
+  santa.position.set(x, 0, z);
+  santa.rotation.y = -0.65; // hacia el cofre aprox
+
+  const red = new THREE.MeshStandardMaterial({ color: 0xc61f2f, roughness: 0.75, metalness: 0.05 });
+  const red2 = new THREE.MeshStandardMaterial({ color: 0x9b1422, roughness: 0.8, metalness: 0.05 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xf6f2e9, roughness: 0.85, metalness: 0.0 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xf0c9a6, roughness: 0.9, metalness: 0.0 });
+  const black = new THREE.MeshStandardMaterial({ color: 0x111318, roughness: 0.6, metalness: 0.15 });
+  const goldB = new THREE.MeshStandardMaterial({ color: 0xffd36a, roughness: 0.35, metalness: 0.85 });
+
+  // body
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.40*s, 0.55*s, 6, 10), red);
+  body.position.y = 0.95*s;
+  santa.add(body);
+
+  // belt
+  const belt = new THREE.Mesh(new THREE.BoxGeometry(0.95*s, 0.14*s, 0.55*s), black);
+  belt.position.set(0, 0.78*s, 0);
+  santa.add(belt);
+
+  const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.20*s, 0.16*s, 0.10*s), goldB);
+  buckle.position.set(0, 0.78*s, 0.30*s);
+  santa.add(buckle);
+
+  // head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.28*s, 14, 14), skin);
+  head.position.y = 1.55*s;
+  santa.add(head);
+
+  // beard
+  const beard = new THREE.Mesh(new THREE.ConeGeometry(0.30*s, 0.42*s, 10), white);
+  beard.position.set(0, 1.38*s, 0.12*s);
+  santa.add(beard);
+
+  // hat
+  const hatBase = new THREE.Mesh(new THREE.ConeGeometry(0.30*s, 0.52*s, 10), red2);
+  hatBase.position.set(0.02*s, 1.88*s, -0.02*s);
+  hatBase.rotation.z = 0.35;
+  santa.add(hatBase);
+
+  const hatTrim = new THREE.Mesh(new THREE.TorusGeometry(0.22*s, 0.06*s, 8, 18), white);
+  hatTrim.position.set(0, 1.70*s, 0);
+  hatTrim.rotation.x = Math.PI/2;
+  santa.add(hatTrim);
+
+  const pom = new THREE.Mesh(new THREE.SphereGeometry(0.10*s, 10, 10), white);
+  pom.position.set(0.22*s, 2.10*s, 0.02*s);
+  santa.add(pom);
+
+  // legs
+  const legGeo = new THREE.CylinderGeometry(0.12*s, 0.14*s, 0.45*s, 8);
+  const leg1 = new THREE.Mesh(legGeo, red2);
+  leg1.position.set(-0.18*s, 0.42*s, 0);
+  santa.add(leg1);
+  const leg2 = leg1.clone();
+  leg2.position.x = 0.18*s;
+  santa.add(leg2);
+
+  // boots
+  const bootGeo = new THREE.BoxGeometry(0.20*s, 0.16*s, 0.30*s);
+  const boot1 = new THREE.Mesh(bootGeo, black);
+  boot1.position.set(-0.18*s, 0.18*s, 0.08*s);
+  santa.add(boot1);
+  const boot2 = boot1.clone();
+  boot2.position.x = 0.18*s;
+  santa.add(boot2);
+
+  // arms (uno saluda)
+  const armGeo = new THREE.CylinderGeometry(0.09*s, 0.10*s, 0.50*s, 8);
+  const armL = new THREE.Mesh(armGeo, red2);
+  armL.position.set(-0.55*s, 1.05*s, 0.0);
+  armL.rotation.z = 0.55;
+  santa.add(armL);
+
+  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.11*s, 10, 10), white);
+  handL.position.set(-0.72*s, 1.25*s, 0.05*s);
+  santa.add(handL);
+
+  const armR = new THREE.Mesh(armGeo, red2);
+  armR.position.set(0.55*s, 1.15*s, 0.02*s);
+  armR.rotation.z = -1.2;         // arriba
+  armR.rotation.x = 0.2;
+  santa.add(armR);
+
+  const handR = new THREE.Mesh(new THREE.SphereGeometry(0.11*s, 10, 10), white);
+  handR.position.set(0.78*s, 1.45*s, 0.08*s);
+  santa.add(handR);
+
+  // idle wave values
+  santa.userData.waveArm = armR;
+  santa.userData.waveHand = handR;
+
+  ambience.add(santa);
+  return santa;
+}
+
+// Colocación (similar a rocas previas, pero árboles)
+const trees = [];
+trees.push(makeTree({ x:-7,  z:-6,  s:1.25, lights:true }));
+trees.push(makeTree({ x: 8,  z:-8,  s:1.45, lights:true }));
+trees.push(makeTree({ x:-10, z:-12, s:1.70, lights:true }));
+trees.push(makeTree({ x: 11, z:-14, s:1.95, lights:true }));
+
+// Árboles más cercanos al cofre para que “enmarquen”
+trees.push(makeTree({ x:-3.8, z:-3.5, s:0.95, lights:true }));
+trees.push(makeTree({ x: 3.9, z:-3.9, s:1.00, lights:true }));
+
+// Papá Noel saludando al lado del cofre
+const santa = makeSanta({ x: 3.2, z: 1.4, s: 1.05 });
+
+// ===== SNOW =====
 const snowCount = wrap.clientWidth < 520 ? 800 : 1200;
 const snowGeo = new THREE.BufferGeometry();
 const snowPos = new Float32Array(snowCount * 3);
@@ -301,7 +484,7 @@ chest.add(lockArc);
 
 // Lid with pivot
 const lidPivot = new THREE.Group();
-lidPivot.position.set(0, 0.70, -1.05); // hinge near back
+lidPivot.position.set(0, 0.70, -1.05);
 chest.add(lidPivot);
 
 const lid = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.8, 2.2), wood);
@@ -312,7 +495,7 @@ const lidBand = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.12, 2.25), gold);
 lidBand.position.set(0, 0.55, 1.05);
 lidPivot.add(lidBand);
 
-// ===== LIGHT CONE (volumetric fake, no rectangles) =====
+// ===== LIGHT CONE (volumetric fake) =====
 const coneGeo = new THREE.ConeGeometry(1.55, 5.2, 32, 1, true);
 const coneMat = new THREE.MeshBasicMaterial({
   color: 0xffd36a,
@@ -328,7 +511,7 @@ lightCone.rotation.x = Math.PI;
 scene.add(lightCone);
 
 // bloom sprite
-function makeGlowSprite(color=0xffd36a){
+function makeGlowSprite(){
   const c = document.createElement("canvas");
   c.width = 256; c.height = 256;
   const ctx = c.getContext("2d");
@@ -363,11 +546,9 @@ function cardTexture(prize){
   c.height = 768;
   const ctx = c.getContext("2d");
 
-  // bg
   ctx.fillStyle = "rgba(20,18,26,0.95)";
   ctx.fillRect(0,0,c.width,c.height);
 
-  // gradient overlay
   const grad = ctx.createLinearGradient(0,0,c.width,c.height);
   grad.addColorStop(0, "rgba(255,211,106,0.18)");
   grad.addColorStop(0.5, "rgba(255,255,255,0.03)");
@@ -375,15 +556,13 @@ function cardTexture(prize){
   ctx.fillStyle = grad;
   ctx.fillRect(0,0,c.width,c.height);
 
-  // border
   ctx.lineWidth = 12;
   ctx.strokeStyle = "rgba(255,211,106,0.75)";
   roundRect(ctx, 18, 18, c.width-36, c.height-36, 32);
   ctx.stroke();
 
-  // chip
   ctx.fillStyle = "rgba(0,0,0,0.35)";
-  roundRect(ctx, 36, 36, 200, 64, 32);
+  roundRect(ctx, 36, 36, 220, 64, 32);
   ctx.fill();
   ctx.strokeStyle = "rgba(255,211,106,0.35)";
   ctx.lineWidth = 3;
@@ -394,22 +573,18 @@ function cardTexture(prize){
   ctx.textAlign = "left";
   ctx.fillText(prize.rarity, 58, 78);
 
-  // icon
   ctx.font = "140px Inter, Arial";
   ctx.textAlign = "center";
   ctx.fillText(prize.icon, c.width/2, 340);
 
-  // title
   ctx.fillStyle = "rgba(255,239,179,0.98)";
   ctx.font = "900 54px Cinzel, serif";
   ctx.fillText(prize.label, c.width/2, 470);
 
-  // sub
   ctx.fillStyle = "rgba(246,242,233,0.82)";
   ctx.font = "600 28px Inter, Arial";
   ctx.fillText("Tocá para ver el detalle", c.width/2, 540);
 
-  // subtle shine diagonal
   ctx.save();
   ctx.translate(c.width/2, c.height/2);
   ctx.rotate(-0.35);
@@ -447,7 +622,6 @@ const cardMat = new THREE.MeshBasicMaterial({
 });
 const card = new THREE.Mesh(cardGeo, cardMat);
 card.position.set(0, 1.25, 0.4);
-card.rotation.set(0, 0, 0);
 scene.add(card);
 
 // Legendary aura ring (solo para 200)
@@ -471,41 +645,28 @@ const pointer = new THREE.Vector2();
 
 let currentPrize = null;
 let opened = false;
-let anim = null; // {t0, phase}
+let anim = null;
 
 function setPrize(prize){
   currentPrize = prize;
-  // update card texture
   const tex = cardTexture(prize);
   if(cardMat.map) cardMat.map.dispose();
   cardMat.map = tex;
   cardMat.needsUpdate = true;
-
-  // update modal text
-  // (se setea al abrir modal)
 }
 
 function setOpenedVisual(prize){
   opened = true;
-  // lid open
-  lidPivot.rotation.x = -Math.PI * 0.62; // ~ -112°
-  // lights on
+  lidPivot.rotation.x = -Math.PI * 0.62;
   coneMat.opacity = 0.65;
   goldLight.intensity = 1.4;
   bloom.material.opacity = 0.35;
 
-  // card visible
   cardMat.opacity = 1.0;
   card.position.set(0, 3.05, 0.55);
   card.rotation.y = 0.12;
 
-  // legendary extras
-  if(prize.id === "200"){
-    ring.material.opacity = 0.55;
-  }else{
-    ring.material.opacity = 0.0;
-  }
-
+  ring.material.opacity = (prize.id === "200") ? 0.55 : 0.0;
   hint.textContent = "🎁 Tocá la carta para ver el detalle";
 }
 
@@ -513,12 +674,7 @@ function startOpenSequence(prize){
   opened = true;
   hint.textContent = "✨ Abriendo el cofre…";
   playSound(sounds.open);
-
-  anim = {
-    t0: performance.now(),
-    phase: "shake",
-    prize
-  };
+  anim = { t0: performance.now(), phase: "shake", prize };
 }
 
 function easeOutBack(x){
@@ -545,14 +701,12 @@ function onPointerDown(e){
 
   const hit = intersects[0].object;
 
-  // Click en carta abre modal
   if(hit === card && cardMat.opacity > 0.6){
     const prize = loadPrize() || currentPrize;
     if(prize) openModal(prize);
     return;
   }
 
-  // Si ya hay premio guardado: mostrar carta + modal
   const stored = loadPrize();
   if(stored){
     setPrize(stored);
@@ -562,7 +716,6 @@ function onPointerDown(e){
     return;
   }
 
-  // Elegir premio, guardar y animar
   const prize = weightedPick(PRIZES);
   savePrize(prize);
   setPrize(prize);
@@ -607,12 +760,34 @@ function tick(now){
   }
   snowGeo.attributes.position.needsUpdate = true;
 
+  // tree lights twinkle
+  const t = now * 0.001;
+  for(const tr of trees){
+    if(tr.userData.bulbs){
+      const bulbs = tr.userData.bulbs.children;
+      for(let i=0;i<bulbs.length;i++){
+        const b = bulbs[i];
+        const s = 0.6 + 0.4 * Math.sin(t*b.userData.tw + b.userData.ph);
+        b.material.emissiveIntensity = 0.6 + s; // parpadeo suave
+      }
+    }
+    if(tr.userData.star){
+      tr.userData.star.rotation.y += dt * 0.6;
+    }
+  }
+
+  // Santa wave
+  if(santa && santa.userData.waveArm){
+    const w = 0.35 * Math.sin(t*1.6) + 0.15;
+    santa.userData.waveArm.rotation.z = -1.2 + w;
+    santa.userData.waveHand.position.y = 1.45 + Math.sin(t*1.6)*0.03;
+  }
+
   // idle breathing
   if(!anim){
     chest.rotation.y = Math.sin(now*0.0006)*0.06;
     chest.position.y = 0.7 + Math.sin(now*0.0012)*0.03;
 
-    // card float if visible
     if(cardMat.opacity > 0.6){
       card.position.y = 3.05 + Math.sin(now*0.0022)*0.06;
       card.rotation.y = 0.12 + Math.sin(now*0.0018)*0.08;
@@ -624,28 +799,23 @@ function tick(now){
 
   // open animation
   if(anim){
-    const t = (now - anim.t0);
+    const ms = (now - anim.t0);
 
-    // phase 1: shake 0-520ms
     if(anim.phase === "shake"){
-      const d = Math.min(1, t / 520);
+      const d = Math.min(1, ms / 520);
       const s = Math.sin(d * Math.PI * 6) * (1-d);
       chest.rotation.z = s * 0.08;
       chest.rotation.y = s * 0.10;
-
       if(d >= 1){
         anim.phase = "lid";
         anim.t0 = now;
       }
     }
-
-    // phase 2: open lid 0-700ms
     else if(anim.phase === "lid"){
-      const d = Math.min(1, t / 700);
+      const d = Math.min(1, ms / 700);
       const e = easeInOut(d);
       lidPivot.rotation.x = -e * Math.PI * 0.62;
 
-      // light ramp
       coneMat.opacity = 0.0 + e * 0.70;
       bloom.material.opacity = 0.0 + e * 0.35;
       goldLight.intensity = 0.0 + e * 1.4;
@@ -656,18 +826,15 @@ function tick(now){
         playSound(sounds.reveal);
       }
     }
-
-    // phase 3: card pop 0-850ms
     else if(anim.phase === "card"){
-      const d = Math.min(1, t / 850);
+      const d = Math.min(1, ms / 850);
       const e = easeOutBack(d);
 
       cardMat.opacity = Math.min(1, d * 1.2);
-      card.position.y = 1.25 + e * 1.85; // sale
+      card.position.y = 1.25 + e * 1.85;
       card.position.z = 0.40 + e * 0.15;
       card.rotation.y = 0.12 + e * 0.30;
 
-      // legendary aura
       if(anim.prize.id === "200"){
         ring.material.opacity = 0.0 + d * 0.55;
         ring.rotation.z += dt * 1.6;
