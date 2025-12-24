@@ -310,6 +310,12 @@ function makeSanta({ x, z, s = 1.0 }) {
   const black    = new THREE.MeshStandardMaterial({ color: 0x111318, roughness: 0.60, metalness: 0.15 });
   const goldBelt = new THREE.MeshStandardMaterial({ color: 0xffd36a, roughness: 0.35, metalness: 0.85 });
 
+  // ===== Ajustables rápidos =====
+  const HAT_LEAN = 0.12;     // 0 = recto, 0.10~0.18 = “clásico”
+  const EYE_OPEN = 0.86;     // 1 = ojo redondo, 0.80~0.90 = más amable
+  const ARM_DROP = -0.22;    // más negativo = brazos más hacia abajo
+  const ARM_OUT  = 0.06;     // apertura de brazos (z)
+
   // BOTAS
   const bootGeo = new THREE.BoxGeometry(0.32 * s, 0.20 * s, 0.45 * s);
   const bootL = new THREE.Mesh(bootGeo, black);
@@ -351,7 +357,7 @@ function makeSanta({ x, z, s = 1.0 }) {
 
   const headGroup = new THREE.Group();
   headGroup.position.set(0, 1.80 * s, 0);
-  headGroup.rotation.y = 0.08; // un toque menos que antes (más “amigable” y centrado)
+  headGroup.rotation.y = 0.02; // más centrado (menos “mirada vacía”)
   santa.add(headGroup);
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(headRadius, 28, 28), skin);
@@ -359,186 +365,230 @@ function makeSanta({ x, z, s = 1.0 }) {
 
   // ===== FACE GROUP =====
   const faceGroup = new THREE.Group();
-  faceGroup.position.set(0, 0.02 * s, headRadius * 0.82);
+  faceGroup.position.set(0, 0.02 * s, headRadius * 0.86);
   headGroup.add(faceGroup);
 
-  // OJOS (más cálidos: pupila convergente + párpado)
-  const eyeWhiteGeo = new THREE.SphereGeometry(0.082 * s, 16, 16);
-  const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.22, metalness: 0.0 });
+  // ===== OJOS (más grandes + brillo) =====
+  const eyeWhiteGeo = new THREE.SphereGeometry(0.090 * s, 16, 16);
+  const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.20, metalness: 0.0 });
 
-  const irisGeo = new THREE.SphereGeometry(0.045 * s, 14, 14);
-  const irisMat = new THREE.MeshStandardMaterial({ color: 0x1b1b1b, roughness: 0.35, metalness: 0.0 });
+  const irisGeo = new THREE.SphereGeometry(0.050 * s, 14, 14);
+  const irisMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.35, metalness: 0.0 });
 
-  const pupilGeo = new THREE.SphereGeometry(0.030 * s, 12, 12);
+  const pupilGeo = new THREE.SphereGeometry(0.028 * s, 12, 12);
   const pupilMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.25, metalness: 0.0 });
+
+  const highlightGeo = new THREE.SphereGeometry(0.014 * s, 10, 10);
+  const highlightMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.10, metalness: 0.0 });
 
   function makeEye(xOff) {
     const g = new THREE.Group();
-    g.position.set(xOff, 0.06 * s, 0);
+    g.position.set(xOff, 0.065 * s, 0);
 
     const sclera = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
-    sclera.scale.set(1.0, 0.82, 0.90);
+    sclera.scale.set(1.10, EYE_OPEN, 0.92);
     g.add(sclera);
 
     const iris = new THREE.Mesh(irisGeo, irisMat);
-    iris.position.z = 0.03 * s;
+    iris.position.z = 0.040 * s;
     g.add(iris);
 
     const pupil = new THREE.Mesh(pupilGeo, pupilMat);
-    // pupila “mirada cálida”: un toque hacia adentro + un toque abajo + adelante
-    pupil.position.set(-Math.sign(xOff) * 0.010 * s, -0.008 * s, 0.070 * s);
+    // mirada más “cálida”: un toque hacia adentro y apenas abajo
+    pupil.position.set(-Math.sign(xOff) * 0.012 * s, -0.010 * s, 0.085 * s);
     g.add(pupil);
 
-    // Párpado superior (tapa un poco el blanco → mirada más suave)
-    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.086 * s, 16, 16), skin);
-    lid.scale.set(1.02, 0.55, 0.90);
-    lid.position.set(0, 0.030 * s, 0.020 * s);
-    g.add(lid);
+    // brillo del ojo (life hack: cambia muchísimo la expresión)
+    const shine = new THREE.Mesh(highlightGeo, highlightMat);
+    shine.position.set(0.020 * s, 0.020 * s, 0.105 * s);
+    g.add(shine);
+
+    // párpado superior (suaviza la mirada)
+    const lidTop = new THREE.Mesh(new THREE.SphereGeometry(0.096 * s, 16, 16), skin);
+    lidTop.scale.set(1.08, 0.52, 0.95);
+    lidTop.position.set(0, 0.035 * s, 0.030 * s);
+    g.add(lidTop);
+
+    // párpado inferior sutil (evita “ojo de muñeco”)
+    const lidBot = new THREE.Mesh(new THREE.SphereGeometry(0.090 * s, 14, 14), skin);
+    lidBot.scale.set(1.05, 0.38, 0.95);
+    lidBot.position.set(0, -0.040 * s, 0.025 * s);
+    g.add(lidBot);
 
     return g;
   }
 
-  faceGroup.add(makeEye(-0.14 * s));
-  faceGroup.add(makeEye( 0.14 * s));
+  faceGroup.add(makeEye(-0.145 * s));
+  faceGroup.add(makeEye( 0.145 * s));
 
-  // CEJAS (ligeramente más “relajadas”)
-  const browGeo = new THREE.TorusGeometry(0.10 * s, 0.022 * s, 10, 22, Math.PI * 0.80);
+  // ===== CEJAS (más “amigables”: levantadas afuera) =====
+  const browGeo = new THREE.TorusGeometry(0.11 * s, 0.024 * s, 10, 26, Math.PI * 0.90);
   const browMat = new THREE.MeshStandardMaterial({ color: 0xf7f3e6, roughness: 0.78, metalness: 0.0 });
 
   const browL = new THREE.Mesh(browGeo, browMat);
-  browL.position.set(-0.14 * s, 0.145 * s, 0.02 * s);
-  browL.rotation.set(Math.PI / 2, 0, Math.PI * 0.04);
+  browL.position.set(-0.15 * s, 0.160 * s, 0.03 * s);
+  browL.rotation.set(Math.PI / 2, 0, 0.32); // outer up
   faceGroup.add(browL);
 
   const browR = browL.clone();
-  browR.position.x = 0.14 * s;
-  browR.rotation.z = -Math.PI * 0.04;
+  browR.position.x = 0.15 * s;
+  browR.rotation.z = -0.32;
   faceGroup.add(browR);
 
-  // NARIZ
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.088 * s, 16, 16), skin);
-  nose.position.set(0, -0.02 * s, 0.12 * s);
+  // ===== NARIZ =====
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.090 * s, 16, 16), skin);
+  nose.position.set(0, -0.015 * s, 0.13 * s);
   nose.scale.set(1.0, 0.85, 1.05);
   faceGroup.add(nose);
 
-  // MEJILLAS
-  const cheekGeo = new THREE.SphereGeometry(0.065 * s, 16, 16);
+  // ===== MEJILLAS (un poquito más arriba y adelante) =====
+  const cheekGeo = new THREE.SphereGeometry(0.070 * s, 16, 16);
   const cheekL = new THREE.Mesh(cheekGeo, cheekMat);
-  cheekL.position.set(-0.20 * s, -0.06 * s, 0.06 * s);
+  cheekL.position.set(-0.21 * s, -0.050 * s, 0.075 * s);
   faceGroup.add(cheekL);
   const cheekR = cheekL.clone();
-  cheekR.position.x = 0.20 * s;
+  cheekR.position.x = 0.21 * s;
   faceGroup.add(cheekR);
 
-  // SONRISA (simple, muy efectiva)
-  const mouthMat = new THREE.MeshStandardMaterial({ color: 0x3b1a1a, roughness: 0.6, metalness: 0.0 });
-  const mouth = new THREE.Mesh(
-    new THREE.TorusGeometry(0.095 * s, 0.014 * s, 10, 24, Math.PI * 0.85),
-    mouthMat
-  );
-  mouth.position.set(0, -0.135 * s, 0.115 * s);
-  mouth.rotation.set(Math.PI / 2, 0, Math.PI); // curva hacia arriba
-  faceGroup.add(mouth);
+  // ===== BOCA (curva real + interior + lengua) =====
+  const mouthGroup = new THREE.Group();
+  mouthGroup.position.set(0, -0.135 * s, 0.135 * s);
+  faceGroup.add(mouthGroup);
 
-  // ===== BARBA =====
+  const mouthLineMat = new THREE.MeshStandardMaterial({ color: 0x3b1a1a, roughness: 0.55, metalness: 0.0 });
+
+  // curva tipo “sonrisa” con tubo (se ve mejor que el torus en este caso)
+  const p1 = new THREE.Vector3(-0.105 * s,  0.020 * s, 0);
+  const p2 = new THREE.Vector3( 0.000 * s, -0.030 * s, 0);
+  const p3 = new THREE.Vector3( 0.105 * s,  0.020 * s, 0);
+  const smileCurve = new THREE.CatmullRomCurve3([p1, p2, p3]);
+
+  const mouthGeo = new THREE.TubeGeometry(smileCurve, 24, 0.012 * s, 10, false);
+  const mouthLine = new THREE.Mesh(mouthGeo, mouthLineMat);
+  mouthLine.position.z = 0.010 * s;
+  mouthGroup.add(mouthLine);
+
+  // interior de la boca (muy sutil)
+  const mouthInsideMat = new THREE.MeshStandardMaterial({ color: 0x190707, roughness: 0.75, metalness: 0.0 });
+  const mouthInside = new THREE.Mesh(new THREE.SphereGeometry(0.070 * s, 16, 16), mouthInsideMat);
+  mouthInside.scale.set(1.25, 0.45, 0.90);
+  mouthInside.position.set(0, -0.020 * s, -0.020 * s);
+  mouthGroup.add(mouthInside);
+
+  // lengua (toque “cute”)
+  const tongueMat = new THREE.MeshStandardMaterial({ color: 0xd57a7a, roughness: 0.85, metalness: 0.0 });
+  const tongue = new THREE.Mesh(new THREE.SphereGeometry(0.040 * s, 14, 14), tongueMat);
+  tongue.scale.set(1.20, 0.55, 0.90);
+  tongue.position.set(0, -0.035 * s, 0.005 * s);
+  mouthGroup.add(tongue);
+
+  // ===== BARBA (un toque más abajo para que se vea la sonrisa) =====
   const beard = new THREE.Mesh(new THREE.SphereGeometry(0.42 * s, 24, 24), white);
-  beard.position.set(0, -0.26 * s, 0.10 * s);
+  beard.position.set(0, -0.31 * s, 0.10 * s);
   beard.scale.set(1.05, 0.52, 1.05);
   headGroup.add(beard);
 
-  // BIGOTE
-  const moustacheGeo = new THREE.SphereGeometry(0.15 * s, 16, 16);
+  // BIGOTE (más arriba y un pelín más chico para no tapar la boca)
+  const moustacheGeo = new THREE.SphereGeometry(0.145 * s, 16, 16);
   const moustacheL = new THREE.Mesh(moustacheGeo, white);
-  moustacheL.position.set(-0.11 * s, -0.11 * s, headRadius * 0.92);
-  moustacheL.scale.set(1.18, 0.60, 1.0);
+  moustacheL.position.set(-0.11 * s, -0.090 * s, headRadius * 0.90);
+  moustacheL.scale.set(1.10, 0.55, 1.0);
   headGroup.add(moustacheL);
   const moustacheR = moustacheL.clone();
   moustacheR.position.x = 0.11 * s;
   headGroup.add(moustacheR);
 
-  // ===== GORRO (calzado y menos torcido) =====
+  // ===== GORRO (calzado + alineado) =====
   const hatGroup = new THREE.Group();
-  // más centrado y un poquito hacia adelante (para que “asiente” en la frente)
-  hatGroup.position.set(0.00 * s, headRadius * 0.72, 0.03 * s);
-  hatGroup.rotation.set(0, 0, 0); // nada de inclinación del grupo
+  // más arriba y ligeramente adelante, y SIN giro raro
+  hatGroup.position.set(0.00 * s, headRadius * 0.78, 0.02 * s);
+  hatGroup.rotation.set(0, 0, 0);
   headGroup.add(hatGroup);
 
+  // banda (brim) un poquito más “apretada”
   const brim = new THREE.Mesh(
-    new THREE.CylinderGeometry(headRadius * 1.10, headRadius * 1.08, 0.10 * s, 24),
+    new THREE.CylinderGeometry(headRadius * 1.06, headRadius * 1.04, 0.10 * s, 24),
     white
   );
   brim.position.y = 0.01 * s;
-  brim.scale.y = 0.75;
+  brim.scale.y = 0.78;
   hatGroup.add(brim);
 
+  // aro suave para que parezca que “abraza” la cabeza
   const brimFur = new THREE.Mesh(
-    new THREE.TorusGeometry(headRadius * 1.06, 0.035 * s, 10, 28),
+    new THREE.TorusGeometry(headRadius * 1.02, 0.034 * s, 10, 30),
     white
   );
   brimFur.rotation.x = Math.PI / 2;
   brimFur.position.y = 0.05 * s;
-  brimFur.scale.set(1, 0.8, 1);
+  brimFur.scale.set(1, 0.85, 1);
   hatGroup.add(brimFur);
 
+  const hatConeH = 0.78 * s;
   const hatCone = new THREE.Mesh(
-    new THREE.ConeGeometry(headRadius * 0.95, 0.78 * s, 24),
+    new THREE.ConeGeometry(headRadius * 0.92, hatConeH, 24),
     redDark
   );
-  // más centrado y MENOS inclinado (así se ve “sobre la cabeza”)
-  hatCone.position.set(0.02 * s, 0.40 * s, -0.02 * s);
-  hatCone.rotation.z = 0.22; // antes 0.55 (muy torcido)
-  hatCone.rotation.x = 0.05;
+  // colocar para que la base “apoye” sobre el brim
+  hatCone.position.set(0.00 * s, hatConeH * 0.5 + 0.04 * s, -0.02 * s);
+  hatCone.rotation.z = HAT_LEAN;
+  hatCone.rotation.x = 0.04;
   hatGroup.add(hatCone);
 
+  // pompón en la punta (coherente con la inclinación)
   const hatPom = new THREE.Mesh(new THREE.SphereGeometry(0.12 * s, 16, 16), white);
-  hatPom.position.set(0.24 * s, 0.80 * s, -0.04 * s);
+  hatPom.position.set(0.22 * s, hatCone.position.y + hatConeH * 0.5, -0.05 * s);
   hatGroup.add(hatPom);
 
-  // ===== HOMBROS + BRAZOS (sin “colgar”) =====
-  const shoulderGeo = new THREE.SphereGeometry(0.16 * s, 16, 16);
+  // ===== HOMBROS + BRAZOS (tapando unión) =====
+  const shoulderGeo = new THREE.SphereGeometry(0.18 * s, 18, 18);
 
   function buildArm(side /* -1 left, +1 right */, waving = false) {
     const armGroup = new THREE.Group();
-    // pivot en hombro (pegado al torso)
-    armGroup.position.set(0.50 * s * side, 1.43 * s, 0.06 * s);
+
+    // Pivot “dentro” del torso para que NO quede abertura
+    armGroup.position.set(0.44 * s * side, 1.43 * s, ARM_OUT * s);
     santa.add(armGroup);
 
-    // hombro/manga para tapar unión
-    const shoulder = new THREE.Mesh(shoulderGeo, redDark);
-    shoulder.scale.set(1.15, 1.0, 1.05);
-    armGroup.add(shoulder);
+    // Hombrera/mangón grande (clava el truco visual: intersección con el torso)
+    const shoulderPad = new THREE.Mesh(shoulderGeo, redDark);
+    shoulderPad.position.set(-0.05 * s * side, 0.00 * s, 0.00 * s); // un poquito hacia adentro
+    shoulderPad.scale.set(1.45, 1.10, 1.20);
+    armGroup.add(shoulderPad);
 
-    // upper arm (más corto, arranca pegado al hombro)
+    // “Cuello de manga” extra (otro volumen para tapar seam)
+    const sleeveNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.15 * s, 0.13 * s, 0.24 * s, 14), redDark);
+    sleeveNeck.rotation.z = Math.PI / 2;
+    sleeveNeck.position.set(0.08 * s * side, 0.00 * s, 0.00 * s);
+    armGroup.add(sleeveNeck);
+
+    // upper arm (arranca pegado, más corto)
     const upperArm = new THREE.Mesh(
       new THREE.CylinderGeometry(0.11 * s, 0.11 * s, 0.44 * s, 12),
       redDark
     );
     upperArm.rotation.z = Math.PI / 2;
-    upperArm.position.x = 0.26 * s * side;
+    upperArm.position.x = 0.30 * s * side;
     armGroup.add(upperArm);
 
-    // “cap” extra para que no se vea el cilindro cortado
-    const sleeveCap = new THREE.Mesh(new THREE.SphereGeometry(0.12 * s, 14, 14), redDark);
-    sleeveCap.position.x = 0.05 * s * side;
-    sleeveCap.scale.set(1.2, 1.0, 1.0);
-    armGroup.add(sleeveCap);
-
+    // puño
     const cuff = new THREE.Mesh(
       new THREE.CylinderGeometry(0.13 * s, 0.13 * s, 0.13 * s, 16),
       white
     );
     cuff.rotation.z = Math.PI / 2;
-    cuff.position.x = 0.48 * s * side;
+    cuff.position.x = 0.52 * s * side;
     armGroup.add(cuff);
 
+    // mano
     const hand = new THREE.Mesh(new THREE.SphereGeometry(0.12 * s, 16, 16), white);
-    hand.position.x = 0.64 * s * side;
+    hand.position.x = 0.69 * s * side;
     armGroup.add(hand);
 
-    // postura inicial (evita “colgado”)
-    // levanta un poco y abre sutilmente
-    armGroup.rotation.z = (waving ? 0.10 : 0.06) * side;
-    armGroup.rotation.x = -0.06; // un toque hacia adelante (más natural)
+    // postura (menos “T pose”, más natural)
+    armGroup.rotation.x = -0.10;
+    armGroup.rotation.z = (waving ? 0.08 : 0.04) * side;
+    armGroup.rotation.y = ARM_DROP * side; // baja un poco
 
     return armGroup;
   }
@@ -546,7 +596,7 @@ function makeSanta({ x, z, s = 1.0 }) {
   // Izq quieto
   const armLGroup = buildArm(-1, false);
 
-  // Der saludando (pivot en hombro → animación más real)
+  // Der saludando (guardamos pivot)
   const armRGroup = buildArm(+1, true);
   santa.userData.waveArm = armRGroup;
 
